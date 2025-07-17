@@ -1,0 +1,32 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - |
+          echo "Writing environment variables to .env file"
+          echo "OPENSEARCH_PASSWORD=$OPENSEARCH_PASSWORD" > .env
+          echo "OPENSEARCH_USERNAME=$OPENSEARCH_USERNAME" >> .env
+          echo "OPENSEARCH_HOST=$OPENSEARCH_HOST" >> .env
+          echo "OPENSEARCH_PORT=$OPENSEARCH_PORT" >> .env
+          echo "OPENSEARCH_SSL=$OPENSEARCH_SSL" >> .env
+          echo "OPENSEARCH_VERIFY_CERTS=$OPENSEARCH_VERIFY_CERTS" >> .env
+          echo "OPENSEARCH_TIMEOUT=$OPENSEARCH_TIMEOUT" >> .env
+          echo "OPENSEARCH_MAX_RETRIES=$OPENSEARCH_MAX_RETRIES" >> .env
+
+      - echo Logging in to Docker Hub...
+      - echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USERNAME --password-stdin
+      
+      - echo Logging in to private Docker registry...
+      - echo $REGISTRY_PASSWORD | docker login $REGISTRY_URL -u $REGISTRY_USERNAME --password-stdin
+  build:
+    commands:
+      - echo Building the Docker image...
+      - docker build -t $IMAGE_NAME:$IMAGE_TAG .
+      - docker tag $IMAGE_NAME:$IMAGE_TAG $REGISTRY_URL/$IMAGE_NAME:$IMAGE_TAG
+      - docker images | grep $IMAGE_NAME
+  post_build:
+    commands:
+      - echo Pushing image to private registry...
+      - docker push $REGISTRY_URL/$IMAGE_NAME:$IMAGE_TAG
+      - echo "Pushed image to docker push $REGISTRY_URL/$IMAGE_NAME:$IMAGE_TAG"
